@@ -1,97 +1,51 @@
 // File: main.js
+// Mengimplementasikan Form Handling, Live Search, dan Aksi Interaktif pada Proyek
 
-const projects = [
-  {
-    id: 1,
-    title: "Sistem Inventaris Keuangan",
-    category: "Web App",
-    budget: 2500000,
-    completed: true
-  },
-  {
-    id: 2,
-    title: "Sistem Kasir Digital POS",
-    category: "Desktop App",
-    budget: 5000000,
-    completed: true
-  },
-  {
-    id: 3,
-    title: "Landing Page Perusahaan",
-    category: "Web App",
-    budget: 1500000,
-    completed: false
-  },
-  {
-    id: 4,
-    title: "Aplikasi Presensi GPS Mobile",
-    category: "Mobile App",
-    budget: 4500000,
-    completed: true
-  },
-  {
-    id: 5,
-    title: "Aplikasi Presensi Face recognition",
-    category: "Mobile App",
-    budget: 7500000,
-    completed: false
-  }
+// Data Array Utama Proyek
+let projects = [
+  { id: 1, title: "Sistem Inventaris Keuangan", category: "Web App", budget: 2500000, completed: true },
+  { id: 2, title: "Sistem Kasir Digital POS", category: "Desktop App", budget: 5000000, completed: true },
+  { id: 3, title: "Landing Page Perusahaan", category: "Web App", budget: 1500000, completed: false },
+  { id: 4, title: "Aplikasi Presensi GPS Mobile", category: "Mobile App", budget: 4500000, completed: true },
+  { id: 5, title: "Aplikasi Presensi Face recognition", category: "Mobile App", budget: 7500000, completed: false }
 ];
 
-// Helper Format Angka ke Rupiah
-const formatRupiah = (angka) => {
-  return "Rp " + angka.toLocaleString("id-ID");
+// State Filter & Pencarian
+let selectedCategory = "Semua";
+let searchQuery = "";
+
+// Helper Format Rupiah
+const formatRupiah = (angka) => "Rp " + angka.toLocaleString("id-ID");
+
+// Memperbarui Kartu Statistik
+const updateStats = () => {
+  const totalProjects = projects.length;
+  const totalBudget = projects.reduce((acc, curr) => acc + curr.budget, 0);
+  const completedCount = projects.filter(item => item.completed).length;
+
+  document.getElementById("stat-total-projects").textContent = totalProjects;
+  document.getElementById("stat-total-budget").textContent = formatRupiah(totalBudget);
+  document.getElementById("stat-completed-projects").textContent = completedCount;
 };
 
-// 1. PROYEK KATEGORI Mobile App
-console.log("===3. PROYEK KATEGORI Mobile App===");
-const mobileProjects = projects.filter(p => p.category === "Mobile App");
-console.log(mobileProjects);
-
-// 2. RINGKASAN NAMA & ANGGARAN (Tabel)
-console.log("\n===4. RINGKASAN NAMA & ANGGARAN===");
-const ringkasanData = projects.map(p => ({
-  nama: `'${p.title}'`,
-  status: p.completed ? "'selesai'" : "'belum'",
-  biaya: `'${formatRupiah(p.budget)}'`
-}));
-console.table(ringkasanData);
-
-// 3. TOTAL ANGGARAN
-console.log("\n===5. TOTAL ANGGARAN===");
-const totalEstimasi = projects.reduce((acc, curr) => acc + curr.budget, 0);
-const totalSelesai = projects
-  .filter(p => p.completed)
-  .reduce((acc, curr) => acc + curr.budget, 0);
-
-console.log(`Total estimasi anggaran portofolio: ${formatRupiah(totalEstimasi)}`);
-console.log(`Total Anggaran Proyek selesai: ${formatRupiah(totalSelesai)}`);
-
-
-// --- LOGIKA UNTUK TAMPILAN DOM (HTML) ---
-const updateStats = (dataList) => {
-  const totalProjects = dataList.length;
-  const totalBudget = dataList.reduce((acc, curr) => acc + curr.budget, 0);
-  const completedCount = dataList.filter(item => item.completed).length;
-
-  const elTotal = document.getElementById("stat-total-projects");
-  const elBudget = document.getElementById("stat-total-budget");
-  const elCompleted = document.getElementById("stat-completed-projects");
-
-  if (elTotal) elTotal.textContent = totalProjects;
-  if (elBudget) elBudget.textContent = formatRupiah(totalBudget);
-  if (elCompleted) elCompleted.textContent = completedCount;
-};
-
-const renderProjects = (filteredList) => {
+// FITUR 2: Render Daftar Proyek dengan Filter Terpadu & Real-Time Live Search
+const renderProjects = () => {
   const container = document.getElementById("project-list");
   if (!container) return;
 
+  // Filter berbasis Kategori dan Live Search (.filter() & .toLowerCase().includes())
+  const filteredList = projects.filter(proj => {
+    const matchCategory = selectedCategory === "Semua" || proj.category === selectedCategory;
+    const matchSearch = proj.title.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchCategory && matchSearch;
+  });
+
   if (filteredList.length === 0) {
-    container.innerHTML = "<p style='text-align: center; color: #64748b; padding: 20px;'>Tidak ada proyek pada kategori ini.</p>";
+    container.innerHTML = "<p style='text-align: center; color: #64748b; padding: 20px;'>Tidak ada proyek yang sesuai.</p>";
     return;
   }
 
+  // FITUR 3: Render Kartu Proyek beserta Tombol 'Ubah Status' & 'Hapus Proyek'
   const htmlString = filteredList.map(proj => {
     const badgeClass = proj.completed ? "badge-success" : "badge-pending";
     const statusText = proj.completed ? "Selesai" : "Dalam Pengerjaan";
@@ -102,6 +56,10 @@ const renderProjects = (filteredList) => {
           <span class="project-category">${proj.category}</span>
           <h4>${proj.title}</h4>
           <p class="project-budget">${formatRupiah(proj.budget)}</p>
+          <div class="action-btns">
+            <button class="btn-action btn-toggle" onclick="toggleStatus(${proj.id})">Ubah Status</button>
+            <button class="btn-action btn-delete" onclick="deleteProject(${proj.id})">Hapus Proyek</button>
+          </div>
         </div>
         <div>
           <span class="badge ${badgeClass}">${statusText}</span>
@@ -113,23 +71,81 @@ const renderProjects = (filteredList) => {
   container.innerHTML = htmlString;
 };
 
-document.addEventListener("DOMContentLoaded", () => {
-  renderProjects(projects);
-  updateStats(projects);
+// FITUR 3 (a): Fungsi Ubah Status Proyek (Toggle)
+window.toggleStatus = (id) => {
+  projects = projects.map(p => {
+    if (p.id === id) {
+      return { ...p, completed: !p.completed };
+    }
+    return p;
+  });
+  renderProjects();
+  updateStats();
+};
 
+// FITUR 3 (b): Fungsi Hapus Proyek Berdasarkan ID
+window.deleteProject = (id) => {
+  projects = projects.filter(p => p.id !== id);
+  renderProjects();
+  updateStats();
+};
+
+// Event Listener Utama saat DOM Siap
+document.addEventListener("DOMContentLoaded", () => {
+  renderProjects();
+  updateStats();
+
+  // FITUR 1: Form Handling & Validation
+  const form = document.getElementById("project-form");
+  form.addEventListener("submit", (e) => {
+    e.preventDefault(); // Mencegah reload halaman
+
+    const titleInput = document.getElementById("input-title").value.trim();
+    const categoryInput = document.getElementById("input-category").value;
+    const budgetInput = Number(document.getElementById("input-budget").value);
+    const completedInput = document.getElementById("input-completed").checked;
+
+    // Validasi: Judul tidak boleh kosong & Anggaran > 0
+    if (!titleInput || budgetInput <= 0) {
+      alert("Judul proyek tidak boleh kosong dan Anggaran harus lebih besar dari 0!");
+      return;
+    }
+
+    // Buat Objek Baru dengan ID Unik (Date.now())
+    const newProject = {
+      id: Date.now(),
+      title: titleInput,
+      category: categoryInput,
+      budget: budgetInput,
+      completed: completedInput
+    };
+
+    // Tambahkan ke array menggunakan Spread Operator
+    projects = [...projects, newProject];
+
+    // Reset Form
+    form.reset();
+
+    // Render ulang UI dan statistik
+    renderProjects();
+    updateStats();
+  });
+
+  // FITUR 2: Event Listener Live Search (Pencarian Real-Time)
+  const searchInput = document.getElementById("search-input");
+  searchInput.addEventListener("input", (e) => {
+    searchQuery = e.target.value;
+    renderProjects();
+  });
+
+  // Event Listener Tombol Filter Kategori
   const filterButtons = document.querySelectorAll(".btn-filter");
   filterButtons.forEach(btn => {
     btn.addEventListener("click", (e) => {
       filterButtons.forEach(b => b.classList.remove("active"));
       e.target.classList.add("active");
-
-      const selectedCategory = e.target.getAttribute("data-category");
-      if (selectedCategory === "Semua") {
-        renderProjects(projects);
-      } else {
-        const filtered = projects.filter(p => p.category === selectedCategory);
-        renderProjects(filtered);
-      }
+      selectedCategory = e.target.getAttribute("data-category");
+      renderProjects();
     });
   });
 });

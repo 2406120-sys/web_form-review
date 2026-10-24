@@ -49,7 +49,7 @@ const webProjects = projects.filter(proj => proj.category === "Web App");
 console.log(webProjects);
 
 
-// 3. PROYEK KATEGORI Mobile App
+// 4. PROYEK KATEGORI Mobile App
 console.log("===3. PROYEK KATEGORI Mobile App===");
 const mobileProjects = projects.filter(proj => proj.category === "Mobile App");
 console.log(mobileProjects);
